@@ -7,13 +7,13 @@
 # Write a player class and a Game class to complete the project.  This
 # is a free form assignment, so approach it however you desire.
 
-#require_relative 'game_class'
-#require_relative 'player_class'
-#require_relative 'diceset_class'
+
+MIN_SCORE_TO_GET_IN_THE_GAME = 300
+MIN_SCORE_TO_GET_IN_FINAL_ROUND = 3000
 
 class DiceSet
    def roll(size)	
-	@set = Array.new(size){rand(1..6)} 
+	     @set = Array.new(size){rand(1..6)} 
    end
    def values
        @set
@@ -23,34 +23,23 @@ end
 
 class Game
 
-    #def self.all
-     #   ObjectSpace.each_object(Player){|player| @all_players << player}
-    #    #@all_players
-    #end
-    
-    
     def initialize(num_of_players)
-	     raise NumberofPlayerError if num_of_players<2
+	     raise NumberofPlayerError if num_of_players < 2
          @num_of_players = num_of_players
-         @all_players=Array.new
+         @all_players = Array.new
          @current_player = 0
-         @final_round =false
-         #create players with name
+         @final_round = false
+         
+         #Create players with name
          for i in 1..num_of_players
            p=Player.new("Player #{i}")
-           puts p.inspect
            @all_players << p
-         end
-         #ObjectSpace.each_object(Player){|player| @all_players << player}       
+         end     
     end
-
-    
-
-
 
     def next_turn
 	      @current_player = (@current_player+1)%(@num_of_players)
-        return @all_players[@current_player]    
+        return @all_players[@current_player]  
     end
      
     def current_player
@@ -70,12 +59,13 @@ class Game
     def final_round!
       @final_round = true
     end
+    
 end    
 
 
 
 class Player
-    #attr_reader :score
+  
     attr_reader :name
     @is_in_game = false
 
@@ -91,13 +81,13 @@ class Player
     end
     
     def continue?
-      puts "y/n?"
+      puts "Do you wanna continue:y/n?"
       response = gets.chomp
-      if response=='y'
+      if response == 'y'
         true
       elsif response=='n'
-	        false
-        end
+	       false
+      end
     end
 
     def is_in_game?
@@ -115,19 +105,19 @@ class Player
    	    num_freq[i-1]+=1
       end
         
-         #Find a set of three's
-         num_scoring_dices +=3 if  num_freq.select{|i| i>=3}.count > 0   ##Needs to be updated if >5 dices are used 
+     #Find a set of three's
+     num_scoring_dices +=3 if  num_freq.select{|i| i>=3}.count > 0   ##Needs to be updated if >5 dices are used 
       
-         #Handle the case of more than three or less than three 1's and 5's
-         scoring_nums = [0,4]            #0==>1 and 4==>5
-         for i in scoring_nums
-            if num_freq[i]>3
-               num_scoring_dices+=num_freq[i]-3
-            elsif num_freq[i]<3
-               num_scoring_dices+=num_freq[i]
-            end
-          end
-         return num_scoring_dices==dice.size ? 5 : dice.size - num_scoring_dices
+      #Handle the case of more than three or less than three 1's and 5's
+      scoring_nums = [0,4]            #0==>1 and 4==>5
+      for i in scoring_nums
+        if num_freq[i]>3
+            num_scoring_dices+=num_freq[i]-3
+        elsif num_freq[i]<3
+            num_scoring_dices+=num_freq[i]
+        end
+      end
+      return num_scoring_dices==dice.size ? 5 : dice.size - num_scoring_dices
     end       
 
 
@@ -138,7 +128,7 @@ class Player
     def update_score_by(points)
     	@score += points
     end
-
+    
     def make_score_zero
 	    @score = 0
     end
@@ -146,13 +136,13 @@ class Player
     def get_score
       @score
     end
+    
     def inspect
 	    return "Score of #{@name} is #{@score}"
     end
-    
-  end
+end
 
-  def score(dice)
+def score(dice)
  	  points = 0 
  	  if dice.size == 0
 	     return points
@@ -167,7 +157,7 @@ class Player
     #Scoring for a set of "1	
  	  points+= (num_freq[0]<3) ? (num_freq[0]*100) : (((num_freq[0]-3)*100)+ 1000)
  
- 	  #scoring for set of 2,3,4,5,6
+ 	  #Scoring for set of 2,3,4,5,6
 	  for i in 1..5
    	  if num_freq[i]>=3
 	      points+=((i+1)*100)
@@ -178,78 +168,96 @@ class Player
 	  #50 points for a 5
     points+= num_freq[4]<3 ? num_freq[4]*50 : (num_freq[4]-3)*50 
 	  return points      
-  end    
+end    
 
 def play(p,game)
-  puts "#{p.name} is going to roll in first turn"
+  puts "#{p.name} is going to roll in his new turn."
   values = p.roll
-  print "#{values}\n"
+  puts "The values on dices are: #{values}"
+  
   points =  p.calculate_score(values)
-  print "#{p.name} got #{points}\n"
+  
+  puts "#{p.name} got #{points}"
+  
   #Check if player is in the game or not.
-  if points < 300
+  if points < MIN_SCORE_TO_GET_IN_THE_GAME
     unless p.is_in_game?
-      #p=Game.next_turn  ##return
-      puts "Alas! I lost :("
-      #next
+      puts "#{p.name} didn't score much to enter the game."
       return points
     end
   else
     unless p.is_in_game?
       p.is_in_game!
-      puts "Hurray,I am in the game :)"
+      puts "#{p.name} has entered the game.Good luck!!"
     end
   end
   
-  while p.continue? and points!=0
-    puts "I am gonna continue baby!!"
-    num_dices = p.non_scoring_dices(values)
+  while points!=0 and p.continue? 
+    puts "#{p.name} has decided to continue his turn!!"
     
-    values = p.roll(num_dices)
+    #Calculate the number of non-scoring dices
+    num_non_scoring_dices = p.non_scoring_dices(values)
     
-    print "I got #{values} "
+    
+    values = p.roll(num_non_scoring_dices)
+    
+    puts "The values on dices are: #{values} "
     
     one_roll_points = p.calculate_score(values)
     
-    print " making score of :#{one_roll_points}\n"
+    puts "#{p.name} got #{one_roll_points} from this roll"
     
     if one_roll_points==0 
-      points=0
+      points = 0
+      puts "In this turn,#{p.name} accumulated #{points}.Total Score: #{p.get_score}"
       return points
     else
-      points+=one_roll_points
-      puts "Final Round? #{p.get_score} and #{points}"
-      if (p.get_score + points) >= 3000
-        puts "Yeah,final round.Beat me if you can!"
+      points+=one_roll_points #update the accumulated points
+      if (p.get_score + points) >= MIN_SCORE_TO_GET_IN_FINAL_ROUND
         p.update_score_by(points)
         game.final_round!
-        print "In this turn #{p.name} scored #{p.get_score}\n" 
+        puts "In this turn,#{p.name} accumulated #{points}.Total Score: #{p.get_score}" 
+        puts "Final Round.Try your best!!"
         return points
       end  
-      
     end  
-    puts "I'm rocking,#{points} accumulated"  
+    
+    puts "In this turn,#{p.name} accumulated #{points}.Total Score: #{p.get_score}"  
   end
     
   p.update_score_by(points)
   
   #Check for final round
-  if p.get_score >= 3000
-    puts "Hurray,final round!! :)"
+  if p.get_score >= MIN_SCORE_TO_GET_IN_FINAL_ROUND
+    puts "Final Round.Try your best!!"
     game.final_round!
   end
   
-  print "In this turn #{p.name} scored #{p.get_score}" 
+  puts "In this turn #{p.name} accumulated #{points}.Total Score: #{p.get_score}" 
   return p
+  
 end
 
+
+############################################################################################
+##
+## Main Function
+##
+############################################################################################
+
 if __FILE__== $0
-  NUM_PLAYERS = 4
+  puts "Enter the number of players:"
+  num_players = gets.chomp.to_i
   puts "Loading game..."
-  game = Game.new(NUM_PLAYERS)
+  
+  game = Game.new(num_players)
   p = game.current_player
-  p.inspect
-  highest_score=0
+  
+  
+  #p.inspect
+  highest_score = 0
+  
+  #PLay game
   while true
     play(p,game)
     if game.final_round?
@@ -257,21 +265,22 @@ if __FILE__== $0
       break
     end
     p = game.next_turn
-    #print game.score_of_all_players
-    #p = Game.current_player
   end
   
+  #Final Round
+  player_marker = p #Mark the player who initiated final round 
   
-  player_marker = p
   winner = p
-  p=game.next_turn
+  
+  p = game.next_turn 
+  
   while p!=player_marker
     play(p,game)
     if p.get_score > highest_score
       highest_score = p.get_score
       winner = p
     end
-      p=game.next_turn
+      p = game.next_turn
   end
-  puts "Hurray,#{winner.name} has won the game!"
+  puts "#{winner.name} has won the game,Congratulations!!"
 end

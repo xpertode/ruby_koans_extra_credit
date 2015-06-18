@@ -15,7 +15,8 @@ class Rectangle
     @y_max = y_max
   end
 end
-
+class InvalidInputError < StandardError
+end
 class Rover
 
   attr_reader :x
@@ -24,8 +25,9 @@ class Rover
 
   def initialize(x,y,direction)
     #Check if the input is in proper format
-    assert_equal true , x.is_a?(Integer)
-    assert_equal true , y.is_a?(Integer)
+    raise InvalidInputError if not x.is_a?(Integer)
+    raise InvalidInputError if not y.is_a?(Integer)
+    raise InvalidInputError if not direction.is_a?(String)
     raise InvalidInputError if direction[/^[EWNS]$/]!=direction
     
     @cardinal_directions = ['W','N','E','S']
@@ -70,7 +72,7 @@ class Rover
     #puts "Direction changed to #{@direction}"
  end
 end
-
+=begin
 if __FILE__ == $0
    input = gets.chomp
    raise InvalidInputError if input[/^(\d\s\d)$/] != input
@@ -94,3 +96,45 @@ if __FILE__ == $0
      input = gets.chomp
    end
 end
+=end
+
+class MoveRover
+  def initialize
+    input = gets.chomp
+    x_max,y_max = get_coordinates(input)
+    
+    rect = Rectangle.new(0,0,x_max,y_max)
+    input = gets.chomp
+    while true
+      x,y,direction = get_rover_location(input)
+      rover = Rover.new(x,y,direction)
+      command_str = gets.chomp
+      rover.command(command_str,rect)
+      puts "#{rover.x} #{rover.y} #{rover.direction}"  
+      input = gets.chomp
+      if input==""
+        break
+      end
+    end 
+  end
+  
+  def get_coordinates(input)
+    raise InvalidInputError if input[/^(\d\s\d)$/] != input
+    x_max,y_max = input.split(' ')
+    raise InvalidInputError if x_max[/^\d*$/]!=x_max and y_max[/^\d*$/]!=y_max
+    x_max = x_max.to_i
+    y_max = y_max.to_i
+    return x_max,y_max
+  end
+  
+  def get_rover_location(input)
+    raise InvalidInputError if input[/^(\d\s\d\s\w)$/]!=input
+    x,y,direction = input.split(' ')
+    raise InvalidInputError if x[/^\d*$/]!=x and y[/^\d*$/]!=y and direction[/^\w$/]!=direction
+    x = x.to_i
+    y = y.to_i
+    return x,y,direction
+  end
+end  
+
+MoveRover.new
